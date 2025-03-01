@@ -1,0 +1,33 @@
+// colors
+$light-blue: #96CAED;
+$red: #F26C5B;
+$yellow: #FBB040;
+$blue: #1764A1;
+$primary: $light-blue;
+
+// font family
+$family-sans-serif: 'Tajawal',
+sans-serif;
+
+
+@import "~bulma/sass/utilities/_all";
+
+// font-weights
+$weight-semibold: $weight-medium;
+
+// title weight
+$title-weight: $weight-light;
+
+// navbar
+$navbar-item-active-background-color: $white;
+$navbar-item-hover-background-color: $white;
+$navbar-item-color: rgba($primary, 0.8);
+$navbar-item-hover-color: $primary;
+$navbar-item-active-color: $primary;
+
+// button
+$button-focus-box-shadow-size: 0 0.4rem 1rem;
+
+// box 
+
+$box-shadow: 0 1rem 4rem rgba($black, 0.2)

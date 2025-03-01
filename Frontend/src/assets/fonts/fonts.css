@@ -1,0 +1,36 @@
+@font-face {
+    font-family: 'Mizan AR+LT';
+    src: url('fonts/subset-MizanARLT-Bold.woff2') format('woff2'),
+        url('fonts/subset-MizanARLT-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: optional;
+}
+
+@font-face {
+    font-family: 'Mizan AR+LT';
+    src: url('fonts/subset-MizanARLT-Regular.woff2') format('woff2'),
+        url('fonts/subset-MizanARLT-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: optional;
+}
+
+@font-face {
+    font-family: 'Mizan AR+LT';
+    src: url('fonts/subset-MizanARLT-Medium.woff2') format('woff2'),
+        url('fonts/subset-MizanARLT-Medium.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+    font-display: optional;
+}
+
+@font-face {
+    font-family: 'Mizan AR+LT';
+    src: url('fonts/subset-MizanARLT-SemiBold.woff2') format('woff2'),
+        url('fonts/subset-MizanARLT-SemiBold.woff') format('woff');
+    font-weight: 600;
+    font-style: normal;
+    font-display: optional;
+}
+
