@@ -382,7 +382,7 @@ func getVolunteerByNumber(w http.ResponseWriter, r *http.Request) {
 
 	// fmt.Print("Request Body: ", requestBody.VolunteerID)
 	// Process the requestBody, to get the volunteer data
-	query1 := client.Collection(outOfOrg_FirestoreCollection).Where("NationalId", "==", requestBody.VolunteerID).Limit(1)
+	query1 := client.Collection(outOfOrg_FirestoreCollection).Where("NationalID", "==", requestBody.VolunteerID).Limit(1)
 	query2 := client.Collection(volunteers_FirestoreCollection).Where("NationalID", "==", requestBody.VolunteerID).Limit(1)
 	query3 := client.Collection(volunteers_FirestoreCollection).
 		Where("Code", "==", requestBody.VolunteerID).
