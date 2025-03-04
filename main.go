@@ -332,7 +332,7 @@ func handleFirestoreQueries(w http.ResponseWriter, query1, query2, query3 firest
 			return
 		}
 
-		relationsVolunteerName, ok := data["Name"].(string)
+		relationsVolunteerName, ok := data["ArabicName"].(string)
 		if !ok || relationsVolunteerName == "" {
 			log.Printf("Invalid or missing Name field (first collection): %#v", data) // Detailed log
 			http.Error(w, "Invalid or missing Name field", http.StatusInternalServerError)
