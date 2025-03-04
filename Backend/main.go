@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -30,7 +32,7 @@ type RequestBody struct {
 
 // ResponseData represents the structure of the JSON response body
 type ResponseData struct {
-	VolunteerID            int       `json:"Code"`
+	VolunteerID            int       `json:"VolunteerID"`
 	NationalId             int       `json:"newVolunteerId"`
 	RelationsVolunteerName string    `json:"RelationsVolunteerName"`
 	Gender                 string    `json:"Gender"`
@@ -383,7 +385,10 @@ func getVolunteerByNumber(w http.ResponseWriter, r *http.Request) {
 	// fmt.Print("Request Body: ", requestBody.VolunteerID)
 	// Process the requestBody, to get the volunteer data
 	query1 := client.Collection(outOfOrg_FirestoreCollection).Where("NationalID", "==", requestBody.VolunteerID).Limit(1)
-	query2 := client.Collection(volunteers_FirestoreCollection).Where("NationalID", "==", requestBody.VolunteerID).Limit(1)
+	query2 := client.Collection(volunteers_FirestoreCollection).
+		Where("NationalID", "==", requestBody.VolunteerID).
+		Where("IsActive", "==", "YES").
+		Limit(1)
 	query3 := client.Collection(volunteers_FirestoreCollection).
 		Where("Code", "==", requestBody.VolunteerID).
 		Where("IsActive", "==", "YES").
@@ -474,71 +479,85 @@ func getRelationsInfoHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Raw Firestore Data: %#v", data)
 
 }
-
-// Store the Volunteer's log in data and updating the unlogged volunteer log out field to null -- Dalal/Nada
-func addRelationsVolunteerHandler(w http.ResponseWriter, r *http.Request) {
+func addRelationsVolunteer(w http.ResponseWriter, r *http.Request) {
 	// Enable CORS
-	enableCORS(w)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "PUT, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	// Handle preflight requests
-	if handlePreflight(w, r) {
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
+	// Read and log raw JSON for debugging
+	body, _ := io.ReadAll(r.Body)
+	fmt.Println("Raw JSON Body:", string(body)) // Debugging: Print received JSON
+
+	// Reset the request body so it can be read again
+	r.Body = io.NopCloser(bytes.NewBuffer(body))
+
 	// Decode the JSON request body
-	requestBody, err := decodeResponsetBody(r)
-	if err != nil {
+	var requestBody ResponseData
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		log.Println("Error decoding JSON:", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// Now you can access VolunteerID, RelationsVolunteerName, and DateTime from requestBody
-	// fmt.Println("VolunteerID:", requestBody.VolunteerID)
-	// fmt.Println("RelationsVolunteerName:", requestBody.RelationsVolunteerName)
-	// fmt.Println("LoginDateTime:", requestBody.LoginDateTime)
-	// fmt.Println("LoginDateTime:", time.Now())
+	fmt.Printf("Decoded VolunteerID: %d\n", requestBody.VolunteerID) // Debugging
+
+	// Validate VolunteerID (should not be zero)
+	if requestBody.VolunteerID == 0 {
+		http.Error(w, "VolunteerID is required", http.StatusBadRequest)
+		return
+	}
+
+	// Firebase Authentication
+	opt := option.WithCredentialsFile("volunteersdata-cf17b-firebase-adminsdk-fbsvc-63e32d0a5e.json")
+	app, err := firebase.NewApp(context.Background(), nil, opt)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 
 	// Initialize Firestore client
-	client, err := initFirebase()
+	client, err := app.Firestore(context.Background())
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 	defer client.Close()
-	// Firestore setup
-	newCollection := client.Collection("Attendance")
 
-	// Set a custom document ID
-	currentTime := time.Now()
-
-	// Extract the date from the current time
-	currentDate := currentTime.Format("2006-01-02")
-
+	// Generate the document ID
+	currentDate := time.Now().Format("2006-01-02")
 	volunteerIDString := strconv.Itoa(requestBody.VolunteerID)
-
 	customDocumentID := volunteerIDString + "-" + currentDate
-	docRef := newCollection.Doc(customDocumentID)
+	fmt.Print(customDocumentID)
+	fmt.Printf("Generated Document ID: %s\n", customDocumentID) // Debugging
 
-	// Create a new document in the collection with the retrieved data
+	// Reference the document
+	docRef := client.Collection("Attendance").Doc(customDocumentID)
+
+	// Update the document
 	_, err = docRef.Set(context.Background(), map[string]interface{}{
 		"RelationsVolunteerName": requestBody.RelationsVolunteerName,
 		"VolunteerID":            requestBody.VolunteerID,
 		"LoginDateTime":          time.Now(),
 		"LogoutDateTime":         nil,
 	})
+
 	if err != nil {
-		http.Error(w, "Error adding data to new collection", http.StatusInternalServerError)
+		log.Println("Error updating document:", err)
+		http.Error(w, "Failed to update document", http.StatusInternalServerError)
 		return
 	}
 
-	incrementVolunteerCount()
-	// Respond with a success message
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("Data added to new collection successfully"))
-} //dalal done
-
-// ----------------------------------------------------------------------------
+	// Respond with success
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Document updated successfully"))
+}
 
 // القدرة على تسجيل الدخول بعد الساعة 12
 func updateLogoutDateTimeHandler(w http.ResponseWriter, r *http.Request) {
@@ -734,7 +753,7 @@ func main() {
 	http.HandleFunc("/getRelationsInfo", getRelationsInfoHandler)
 	http.HandleFunc("/getNumberHandler", getVolunteerByNumber)
 	http.HandleFunc("/addNewVolunteer", addNewVolunteer)
-	http.HandleFunc("/addRelationsVolunteer", addRelationsVolunteerHandler)
+	http.HandleFunc("/addRelationsVolunteer", addRelationsVolunteer)
 	http.HandleFunc("/searchAttendanceHandler", searchAttendanceHandler)
 	http.HandleFunc("/updateLogoutDateTime", updateLogoutDateTimeHandler)
 	http.HandleFunc("/getVolunteerCount", getVolunteerCountHandler)

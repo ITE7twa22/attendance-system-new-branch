@@ -39,6 +39,8 @@
         </div>
      
       </div >
+      <div v-if="!ifSucsLogin">
+
       <p v-if="isFindName" class="text-e7twa22-white 4xl">
   أهلًا بك <span class="text-e7twa22-blue">{{ relationsVolunteerName }}</span> هل تريد تأكيد تسجيل الدخول؟
 </p>
@@ -53,8 +55,9 @@
   <button @click="cancelLogin" class="bg-gray-500 text-white px-4 py-2 rounded-md cursor-pointer">إلغاء</button>
 
 </div>
+</div>
 
-<p v-if="ifSucsLogin" class="text-e7twa22-white 4xl">
+<p v-if="ifSucsLogin && relationsVolunteerName" class="text-e7twa22-white 4xl">
   أهلًا بك <span class="text-e7twa22-blue">{{ relationsVolunteerName }}</span> هل تريد تأكيد تسجيل الخروج؟
 </p>
 <br />
@@ -62,7 +65,7 @@
 
 <br />
 
-<div v-if="ifSucsLogin" class="button-container flex justify-center gap-4 mt-4">
+<div v-if="ifSucsLogin && relationsVolunteerName" class="button-container flex justify-center gap-4 mt-4">
 
   <button @click="confirmLogout" class="bg-red-500 text-white px-4 py-2 rounded-md cursor-pointer">خروج</button>
 
@@ -656,11 +659,12 @@ handleInputChange() {
               console.log(this.ifCheckIn);
 
               this.isFindName = true
+              this.ifSucsLogin = false
             }
             else {
               console.log(this.ifCheckIn);
 
-              this.ifSucsLogin = true
+              // this.ifSucsLogin = true
             }
           }
           else {
@@ -678,9 +682,9 @@ handleInputChange() {
 
               this.isFindName = true
             }
-            else {
-              this.ifSucsLogin = true
-            }
+            // else {
+            //   this.ifSucsLogin = true
+            // }
           }
 
 
@@ -721,11 +725,13 @@ handleInputChange() {
     console.log(id);
     const attendanceResponse = await axios.post('http://localhost:8080/searchAttendanceHandler', { volunteerID: parseInt(id) });
     console.log("استجابة الخادم:", attendanceResponse.data);
-    if (attendanceResponse.data === 'Volunteer not came today') {
+    if (attendanceResponse.data === 'Volunteer did not come today') {
       this.ifCheckIn = false;
+      this.ifSucsLogin = false
     } else if (attendanceResponse.data === 'Volunteer came today') {
       this.isFindName = false
       this.ifCheckIn = true;
+      this.ifSucsLogin = true
     }
   } catch (error) {
     console.error('خطأ أثناء التحقق من حالة تسجيل الدخول:', error);
