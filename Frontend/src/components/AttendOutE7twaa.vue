@@ -219,7 +219,7 @@
     </div>
     
     <p class="text-center flex flex-col gap-4" style="color: red;">{{ addvError }}</p>
-    <button type="submit" class="add-button" style="background-color: #5DAAAD;" :disabled="emailError">إضافة</button>
+    <button type="submit" class="add-button" style="background-color: #5DAAAD;">إضافة</button>
   </form>
 </div>
 
@@ -480,6 +480,7 @@ this.ifCheckIn = false;
       NationalId: parseInt(this.newVolunteerId),
       Phone: this.newVolunteerPhone,
       Gender: this.newVolunteerGender,
+      Email: this.newVolunteerEmail,
     };
 
     console.log(formData);

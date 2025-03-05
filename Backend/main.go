@@ -36,6 +36,7 @@ type ResponseData struct {
 	NationalId             int       `json:"newVolunteerId"`
 	RelationsVolunteerName string    `json:"RelationsVolunteerName"`
 	Gender                 string    `json:"Gender"`
+	Email                  string    `json:"Email"`
 	LoginDateTime          time.Time `json:"LoginDateTime"`
 	LogoutDateTime         time.Time `json:"LogoutDateTime"`
 }
@@ -46,6 +47,7 @@ type Volunteer struct {
 	Name       string `json:"Name"`
 	Phone      string `json:"Phone"`
 	Gender     string `json:"Gender"`
+	Email      string `json:"Email"`
 }
 
 // Function to enable CORS for the response
@@ -80,7 +82,7 @@ func decodeResponsetBody(r *http.Request) (ResponseData, error) {
 
 // Function to initialize the Firebase app and Firestore client
 func initFirebase() (*firestore.Client, error) {
-	opt := option.WithCredentialsFile("volunteersdata-cf17b-firebase-adminsdk-fbsvc-63e32d0a5e.json")
+	opt := option.WithCredentialsFile("test.json")
 
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
@@ -179,10 +181,11 @@ func addNewVolunteer(w http.ResponseWriter, r *http.Request) {
 	log.Println("4- Creating a new document with the volunteer data")
 
 	_, _, err = collection1.Add(context.Background(), map[string]interface{}{
-		"NationalId": newVolunteer.NationalId,
-		"Name":       newVolunteer.Name,
+		"NationalID": newVolunteer.NationalId,
+		"ArabicName": newVolunteer.Name,
 		"Phone":      newVolunteer.Phone,
 		"Gender":     newVolunteer.Gender,
+		"Email":      newVolunteer.Email,
 		"fromE7twaa": false,
 		// Add other fields as needed...
 	})
@@ -423,7 +426,7 @@ func getRelationsInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use the downloaded JSON key file to authenticate the Firebase app
-	opt := option.WithCredentialsFile("volunteersdata-cf17b-firebase-adminsdk-fbsvc-63e32d0a5e.json")
+	opt := option.WithCredentialsFile("test.json")
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -515,7 +518,7 @@ func addRelationsVolunteer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Firebase Authentication
-	opt := option.WithCredentialsFile("volunteersdata-cf17b-firebase-adminsdk-fbsvc-63e32d0a5e.json")
+	opt := option.WithCredentialsFile("test.json")
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
