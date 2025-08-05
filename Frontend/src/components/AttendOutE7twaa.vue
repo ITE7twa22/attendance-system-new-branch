@@ -7,7 +7,7 @@
     </div>
 
     <div class="flex flex-col items-center justify-center mb-6">
-      <div class=" bg-[#282828e4] p-8 rounded-lg shadow-lg w-full max-w-md opacity-90 hover:opacity-100 relative mb-4">
+<div class="bg-[#14124D] p-8 rounded-lg shadow-lg w-full max-w-md opacity-90 hover:opacity-100 relative mb-4">
         <p class="text-gray-400 flex items-center justify-start flex-row-reverse mb-4">
           <img src="../assets/img/cautionIcon.png" class="w-4 h-4 mr-1 ml-1" alt="Caution Icon"  @click="alert('في حال واجهتك أي مشكلة بالتسجيل، الرجاء التوجه لفريق الموارد البشرية')"/>
           <span>
@@ -39,9 +39,7 @@
         </div>
      
       </div >
-      <div v-if="!ifSucsLogin">
-
-      <p v-if="isFindName" class="text-e7twa22-white 4xl">
+<p v-if="isFindName" class="text-[#14124D] text-4xl">
   أهلًا بك <span class="text-e7twa22-blue">{{ relationsVolunteerName }}</span> هل تريد تأكيد تسجيل الدخول؟
 </p>
 <br />
@@ -50,14 +48,15 @@
 
 <div v-if="isFindName" class="button-container flex justify-center gap-4 mt-4">
 
-  <button @click="confirmLogin" style="background-color: rgba(93, 170, 174, 0.8);" class="text-white px-4 py-2 rounded-md cursor-pointer">دخول</button>
+  <button @click="confirmLogin" style="background-color:rgb(74, 117, 139);" class="text-white px-4 py-2 rounded-md cursor-pointer">دخول</button>
 
-  <button @click="cancelLogin" class="bg-gray-500 text-white px-4 py-2 rounded-md cursor-pointer">إلغاء</button>
+<button @click="cancelLogin" style="background-color: #3C7994;" class="text-white px-4 py-2 rounded-md cursor-pointer">
+  إلغاء
+</button>
 
 </div>
-</div>
 
-<p v-if="ifSucsLogin && relationsVolunteerName" class="text-e7twa22-white 4xl">
+<p v-if="ifSucsLogin" class="text-e7twa22-white 4xl">
   أهلًا بك <span class="text-e7twa22-blue">{{ relationsVolunteerName }}</span> هل تريد تأكيد تسجيل الخروج؟
 </p>
 <br />
@@ -65,7 +64,7 @@
 
 <br />
 
-<div v-if="ifSucsLogin && relationsVolunteerName" class="button-container flex justify-center gap-4 mt-4">
+<div v-if="ifSucsLogin" class="button-container flex justify-center gap-4 mt-4">
 
   <button @click="confirmLogout" class="bg-red-500 text-white px-4 py-2 rounded-md cursor-pointer">خروج</button>
 
@@ -219,7 +218,7 @@
     </div>
     
     <p class="text-center flex flex-col gap-4" style="color: red;">{{ addvError }}</p>
-    <button type="submit" class="add-button" style="background-color: #5DAAAD;">إضافة</button>
+    <button type="submit" class="add-button" style="background-color: #5DAAAD;" :disabled="emailError">إضافة</button>
   </form>
 </div>
 
@@ -480,7 +479,6 @@ this.ifCheckIn = false;
       NationalId: parseInt(this.newVolunteerId),
       Phone: this.newVolunteerPhone,
       Gender: this.newVolunteerGender,
-      Email: this.newVolunteerEmail,
     };
 
     console.log(formData);
@@ -660,12 +658,11 @@ handleInputChange() {
               console.log(this.ifCheckIn);
 
               this.isFindName = true
-              this.ifSucsLogin = false
             }
             else {
               console.log(this.ifCheckIn);
 
-              // this.ifSucsLogin = true
+              this.ifSucsLogin = true
             }
           }
           else {
@@ -683,9 +680,9 @@ handleInputChange() {
 
               this.isFindName = true
             }
-            // else {
-            //   this.ifSucsLogin = true
-            // }
+            else {
+              this.ifSucsLogin = true
+            }
           }
 
 
@@ -726,13 +723,11 @@ handleInputChange() {
     console.log(id);
     const attendanceResponse = await axios.post('http://localhost:8080/searchAttendanceHandler', { volunteerID: parseInt(id) });
     console.log("استجابة الخادم:", attendanceResponse.data);
-    if (attendanceResponse.data === 'Volunteer did not come today') {
+    if (attendanceResponse.data === 'Volunteer not came today') {
       this.ifCheckIn = false;
-      this.ifSucsLogin = false
     } else if (attendanceResponse.data === 'Volunteer came today') {
       this.isFindName = false
       this.ifCheckIn = true;
-      this.ifSucsLogin = true
     }
   } catch (error) {
     console.error('خطأ أثناء التحقق من حالة تسجيل الدخول:', error);
@@ -759,7 +754,7 @@ handleInputChange() {
  @import url('https://fonts.googleapis.com/css2?family=Mirza:wght@400;500;600;700&display=swap');
 
 .btn {
-  background-color: rgb(93, 170, 174);
+background-color: #3C7994;
   color: white;
   border-radius: 20px;
   cursor: pointer;
