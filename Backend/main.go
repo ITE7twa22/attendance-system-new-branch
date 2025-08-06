@@ -8,14 +8,21 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
+
+	"github.com/joho/godotenv"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
 	"github.com/rs/cors"
 	"google.golang.org/api/option"
 )
+
+const credentialsFile = "volunteersdata-cf17b-firebase-adminsdk-fbsvc-a56cdff6ba.json"
+
+// var credentialsFile = "volunteersdata-cf17b-firebase-adminsdk-fbsvc-a56cdff6ba.json"
 
 // Firestore collection name
 const outOfOrg_FirestoreCollection = "outOfOrg"
@@ -82,7 +89,7 @@ func decodeResponsetBody(r *http.Request) (ResponseData, error) {
 
 // Function to initialize the Firebase app and Firestore client
 func initFirebase() (*firestore.Client, error) {
-	opt := option.WithCredentialsFile("test.json")
+	opt := option.WithCredentialsFile(credentialsFile)
 
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
@@ -152,8 +159,8 @@ func addNewVolunteer(w http.ResponseWriter, r *http.Request) {
 	// Reference to the Firestore collections for volunteers
 	log.Println("2- Referencing the Firestore collections to volunteers")
 
-	collection1 := client.Collection(outOfOrg_FirestoreCollection)
-	collection2 := client.Collection(volunteers_FirestoreCollection)
+	collection1 := firestoreCli.Collection(outOfOrg_FirestoreCollection)
+	collection2 := firestoreCli.Collection(volunteers_FirestoreCollection)
 
 	// Check if the volunteer already exists in either collection
 	if exists, err := checkIfVolunteerExists(collection1, "NationalId", newVolunteer.NationalId); err != nil || exists {
@@ -379,24 +386,18 @@ func getVolunteerByNumber(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Firebase Client
-	client, err := initFirebase()
-	if err != nil {
-		return
-	}
-
 	// fmt.Print("Request Body: ", requestBody.VolunteerID)
 	// Process the requestBody, to get the volunteer data
-	query1 := client.Collection(outOfOrg_FirestoreCollection).Where("NationalID", "==", requestBody.VolunteerID).Limit(1)
-	query2 := client.Collection(volunteers_FirestoreCollection).
+	query1 := firestoreCli.Collection(outOfOrg_FirestoreCollection).Where("NationalID", "==", requestBody.VolunteerID).Limit(1)
+	query2 := firestoreCli.Collection(volunteers_FirestoreCollection).
 		Where("NationalID", "==", requestBody.VolunteerID).
 		Where("IsActive", "==", "YES").
 		Limit(1)
-	query3 := client.Collection(volunteers_FirestoreCollection).
+	query3 := firestoreCli.Collection(volunteers_FirestoreCollection).
 		Where("Code", "==", requestBody.VolunteerID).
 		Where("IsActive", "==", "YES").
 		Limit(1)
-	query4 := client.Collection(volunteers_FirestoreCollection).
+	query4 := firestoreCli.Collection(volunteers_FirestoreCollection).
 		Where("Code", "==", requestBody.VolunteerID).
 		Where("IsActive", "==", "NO").
 		Limit(1)
@@ -425,24 +426,17 @@ func getRelationsInfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use the downloaded JSON key file to authenticate the Firebase app
-	opt := option.WithCredentialsFile("test.json")
-	app, err := firebase.NewApp(context.Background(), nil, opt)
+	// Use the global firebaseApp
+	ctx := context.Background()
+	client, err := firebaseApp.Firestore(ctx)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	// Initialize Firestore client
-	client, err := app.Firestore(context.Background())
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Failed to connect to Firestore", http.StatusInternalServerError)
 		return
 	}
 	defer client.Close()
 
 	// Reference to the Firestore collection
-	collection := client.Collection(volunteers_FirestoreCollection)
+	collection := firestoreCli.Collection(volunteers_FirestoreCollection)
 
 	// Query to get RelationsVolunteerName by VolunteerID
 	query := collection.Where("Code", "==", requestBody.VolunteerID).Limit(1)
@@ -518,7 +512,7 @@ func addRelationsVolunteer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Firebase Authentication
-	opt := option.WithCredentialsFile("test.json")
+	opt := option.WithCredentialsFile(credentialsFile)
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -541,7 +535,7 @@ func addRelationsVolunteer(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Generated Document ID: %s\n", customDocumentID) // Debugging
 
 	// Reference the document
-	docRef := client.Collection("Attendance").Doc(customDocumentID)
+	docRef := firestoreCli.Collection("Attendance").Doc(customDocumentID)
 
 	// Update the document
 	_, err = docRef.Set(context.Background(), map[string]interface{}{
@@ -586,7 +580,7 @@ func updateLogoutDateTimeHandler(w http.ResponseWriter, r *http.Request) {
 	defer client.Close()
 
 	// Reference to the Firestore collection
-	collection := client.Collection("Attendance")
+	collection := firestoreCli.Collection("Attendance")
 
 	// Query to check if the volunteer has an attendance record for today
 	// Get current date and time
@@ -690,7 +684,7 @@ func determineSearchPeriod() (time.Time, time.Time) {
 
 // تنفيذ استعلام Firestore والتحقق من وجود سجل الحضور
 func performQueryAndCheckAttendance(client *firestore.Client, volunteerID int, start, end time.Time) (bool, error) {
-	collection := client.Collection("Attendance")
+	collection := firestoreCli.Collection("Attendance")
 	query := collection.Where("VolunteerID", "==", volunteerID).
 		Where("LoginDateTime", ">=", start).
 		Where("LoginDateTime", "<=", end)
@@ -751,8 +745,37 @@ func searchAttendanceHandler(w http.ResponseWriter, r *http.Request) {
 
 //----------------------------------------------------------------------------
 
+var (
+	firebaseApp  *firebase.App
+	firestoreCli *firestore.Client
+)
+
+func initFirebaseOnce() {
+	credPath := os.Getenv("FIREBASE_CREDENTIAL_PATH")
+	if credPath == "" {
+		log.Fatal("FIREBASE_CREDENTIAL_PATH not set")
+	}
+
+	opt := option.WithCredentialsFile(credPath)
+	app, err := firebase.NewApp(context.Background(), nil, opt)
+	if err != nil {
+		log.Fatalf("Error initializing Firebase app: %v", err)
+	}
+	firebaseApp = app
+
+	client, err := app.Firestore(context.Background())
+	if err != nil {
+		log.Fatalf("Error initializing Firestore client: %v", err)
+	}
+	firestoreCli = client
+}
+
 // Add a new route for the new handler
 func main() {
+	_ = godotenv.Load()
+
+	initFirebaseOnce()
+
 	http.HandleFunc("/getRelationsInfo", getRelationsInfoHandler)
 	http.HandleFunc("/getNumberHandler", getVolunteerByNumber)
 	http.HandleFunc("/addNewVolunteer", addNewVolunteer)
