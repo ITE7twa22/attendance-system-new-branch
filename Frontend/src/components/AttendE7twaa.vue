@@ -178,7 +178,7 @@ export default {
 
     getRelationsInfo() {
       this.showLoadingScreen();
-      axios.post('http://localhost:8080/getRelationsInfo', { volunteerID: parseInt(this.volunteerID) }, {
+      axios.post('/getRelationsInfo', { volunteerID: parseInt(this.volunteerID) }, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -230,7 +230,7 @@ export default {
     this.showLoadingScreen();
     
     // Determine endpoint based on check-in state
-    const endpoint = this.ifCheckIn ? 'http://localhost:8080/updateLogoutDateTime' : 'http://localhost:8080/addRelationsVolunteer';
+    const endpoint = this.ifCheckIn ? '/updateLogoutDateTime' : '/addRelationsVolunteer';
     const loginDateTime = new Date();
 
     // If already checked in, request logout confirmation
@@ -286,7 +286,7 @@ export default {
     async getIfCheckIn() {
       try {
         const response = await axios.post(
-          'http://localhost:8080/searchAttendanceHandler',
+          '/searchAttendanceHandler',
           { volunteerID: parseInt(this.volunteerID) },
           {
             headers: {
