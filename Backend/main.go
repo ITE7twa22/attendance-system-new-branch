@@ -20,10 +20,6 @@ import (
 	"google.golang.org/api/option"
 )
 
-const credentialsFile = "volunteersdata-cf17b-firebase-adminsdk-fbsvc-a56cdff6ba.json"
-
-// var credentialsFile = "volunteersdata-cf17b-firebase-adminsdk-fbsvc-a56cdff6ba.json"
-
 // Firestore collection name
 const outOfOrg_FirestoreCollection = "outOfOrg"
 const volunteers_FirestoreCollection = "Volunteers"
@@ -87,22 +83,6 @@ func decodeResponsetBody(r *http.Request) (ResponseData, error) {
 	return requestBody, err
 }
 
-// Function to initialize the Firebase app and Firestore client
-func initFirebase() (*firestore.Client, error) {
-	opt := option.WithCredentialsFile(credentialsFile)
-
-	app, err := firebase.NewApp(context.Background(), nil, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := app.Firestore(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
-}
-
 // Function to increment the volunteer count
 func incrementVolunteerCount() {
 	volunteerCount++
@@ -147,14 +127,6 @@ func addNewVolunteer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	// Initialize Firebase client
-	client, err := initFirebase()
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	defer client.Close()
 
 	// Reference to the Firestore collections for volunteers
 	log.Println("2- Referencing the Firestore collections to volunteers")
@@ -511,22 +483,6 @@ func addRelationsVolunteer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Firebase Authentication
-	opt := option.WithCredentialsFile(credentialsFile)
-	app, err := firebase.NewApp(context.Background(), nil, opt)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	// Initialize Firestore client
-	client, err := app.Firestore(context.Background())
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	defer client.Close()
-
 	// Generate the document ID
 	currentDate := time.Now().Format("2006-01-02")
 	volunteerIDString := strconv.Itoa(requestBody.VolunteerID)
@@ -538,7 +494,7 @@ func addRelationsVolunteer(w http.ResponseWriter, r *http.Request) {
 	docRef := firestoreCli.Collection("Attendance").Doc(customDocumentID)
 
 	// Update the document
-	_, err = docRef.Set(context.Background(), map[string]interface{}{
+	_, err := docRef.Set(context.Background(), map[string]interface{}{
 		"RelationsVolunteerName": requestBody.RelationsVolunteerName,
 		"VolunteerID":            requestBody.VolunteerID,
 		"LoginDateTime":          time.Now(),
@@ -570,14 +526,6 @@ func updateLogoutDateTimeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	client, err := initFirebase()
-	if err != nil {
-		log.Println("Error creating Firebase app:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	defer client.Close()
 
 	// Reference to the Firestore collection
 	collection := firestoreCli.Collection("Attendance")
@@ -683,7 +631,7 @@ func determineSearchPeriod() (time.Time, time.Time) {
 }
 
 // تنفيذ استعلام Firestore والتحقق من وجود سجل الحضور
-func performQueryAndCheckAttendance(client *firestore.Client, volunteerID int, start, end time.Time) (bool, error) {
+func performQueryAndCheckAttendance(volunteerID int, start, end time.Time) (bool, error) {
 	collection := firestoreCli.Collection("Attendance")
 	query := collection.Where("VolunteerID", "==", volunteerID).
 		Where("LoginDateTime", ">=", start).
@@ -724,16 +672,8 @@ func searchAttendanceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client, err := initFirebase()
-	if err != nil {
-		log.Println("Error creating Firebase app:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	defer client.Close()
-
 	start, end := determineSearchPeriod()
-	attended, err := performQueryAndCheckAttendance(client, requestBody.VolunteerID, start, end)
+	attended, err := performQueryAndCheckAttendance(requestBody.VolunteerID, start, end)
 	if err != nil {
 		log.Println("Error querying Firestore:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
