@@ -483,7 +483,7 @@ this.ifCheckIn = false;
 
     console.log(formData);
 
-    axios.post('/addNewVolunteer', JSON.stringify(formData), {
+    axios.post('/api/addNewVolunteer', JSON.stringify(formData), {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -567,7 +567,7 @@ handleInputChange() {
 
       this.showLoadingScreen(); // Show loading before the API call
       console.log("الرقم المستخدم:", this.code || this.volunteerID); // تحقق من الرقم المستخدم
-      const endpoint = this.ifCheckIn ? '/updateLogoutDateTime' : '/addRelationsVolunteer';
+      const endpoint = this.ifCheckIn ? '/api/updateLogoutDateTime' : '/api/addRelationsVolunteer';
       const loginDateTime = new Date();
         // استخدام الكود إذا كان موجودًا
   const idToUse = this.code ? parseInt(this.code) : parseInt(this.volunteerID);
@@ -622,7 +622,7 @@ handleInputChange() {
      this.showLoadingScreen(); //  this.showLoadingScreen();
       axios
         .post(
-          '/getNumberHandler',
+          '/api/getNumberHandler',
           { volunteerID: parseInt(this.volunteerID) },
           {
             headers: {
@@ -721,7 +721,7 @@ handleInputChange() {
 
     // تحقق من وجود المتطوع في سجلات الحضور باستخدام volunteerID
     console.log(id);
-    const attendanceResponse = await axios.post('/searchAttendanceHandler', { volunteerID: parseInt(id) });
+    const attendanceResponse = await axios.post('/api/searchAttendanceHandler', { volunteerID: parseInt(id) });
     console.log("استجابة الخادم:", attendanceResponse.data);
     if (attendanceResponse.data === 'Volunteer not came today') {
       this.ifCheckIn = false;
